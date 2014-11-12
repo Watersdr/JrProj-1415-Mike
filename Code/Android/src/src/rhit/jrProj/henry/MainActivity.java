@@ -13,6 +13,7 @@ import rhit.jrProj.henry.firebase.User;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.Fragment;
+import android.app.ListFragment;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
@@ -29,7 +30,8 @@ import com.firebase.client.Firebase;
 
 public class MainActivity extends Activity implements
 		ProjectListFragment.Callbacks, MilestoneListFragment.Callbacks,
-		TaskListFragment.Callbacks, TaskDetailFragment.Callbacks {
+		TaskListFragment.Callbacks, TaskDetailFragment.Callbacks,
+		MilestoneDetailFragment.Callbacks, ProjectDetailFragment.Callbacks {
 	/**
 	 * The Url to the firebase repository
 	 */
@@ -39,57 +41,55 @@ public class MainActivity extends Activity implements
 	 */
 	private boolean mTwoPane;
 
-	/**
-	 * Created user after login
-	 */
-	private User user;
-
-	/**
-	 * The project that has been selected from the list
-	 */
-	private Project selectedProject;
-
-	/**
-	 * The milestone selected by the user
-	 */
-	private Milestone selectedMilestone;
-
-	/**
-	 * The task that is currently selected by the user
-	 */
-	private Task selectedTask;
-
-	/**
-	 * Determines what page to fill in when the application starts
-	 */
-	private Stack<Fragment> fragmentStack;
-	
-	/**
-	 * sorting mode
-	 */
-	private String sortingMode;
-	
-	/**
-	 * current Fragment
-	 * Used when the sorting mode is changed so that we can update the correct fragment's list.
-	 */
-	private Fragment currFragment;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 		Firebase.setAndroidContext(this);
 		ActionBar actionBar = getActionBar();
+		this.mTwoPane = (getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE;
 		actionBar.setBackgroundDrawable(new ColorDrawable(0x268bd2));
 		Firebase ref = new Firebase(firebaseUrl);
-		this.fragmentStack = new Stack<Fragment>();
+		if (GlobalData.getData().fragmentStack == null) {
+			GlobalData.getData().fragmentStack = new Stack<Fragment>();
+		}
 		AuthData authData = ref.getAuth();
-		if (authData != null) {
-			this.user = new User(firebaseUrl + "users/" + authData.getUid());
+		if (GlobalData.getData().user != null && this.mTwoPane) {
+			// Rotated!
+			setContentView(R.layout.activity_twopane);
+			if (ListFragment.class
+					.isAssignableFrom(GlobalData.getData().currentFragment
+							.getClass())) {
+				// List View
+				getFragmentManager()
+						.beginTransaction()
+						.add(R.id.twopane_list,
+								GlobalData.getData().currentFragment).commit();
+			} else {
+				// Detail View
+					getFragmentManager()
+							.beginTransaction()
+							.add(R.id.twopane_list,
+									GlobalData.getData().fragmentStack.peek())
+							.commit();
+//					GlobalData.getData().currentFragment = GlobalData.getData().fragmentStack.peek();
+//					getFragmentManager()
+//							.beginTransaction()
+//							.add(R.id.twopane_detail_container,
+//									GlobalData.getData().currentFragment).commit();
+			}
+			getActionBar().setDisplayHomeAsUpEnabled(
+					GlobalData.getData().fragmentStack.size() > 1);
+		} else if (authData != null) {
+
+			GlobalData.getData().user = new User(firebaseUrl + "users/"
+					+ authData.getUid());
 			createProjectList();
+
 		} else if (this.getIntent().getStringExtra("user") != null) {
 			// If logged in get the user's project list
-			this.user = new User(this.getIntent().getStringExtra("user"));
+			GlobalData.getData().user = new User(this.getIntent()
+					.getStringExtra("user"));
 			createProjectList();
 		} else {
 			// Starts the LoginActivity if the user has not been logged in just
@@ -98,7 +98,6 @@ public class MainActivity extends Activity implements
 			this.startActivity(intent);
 			this.finish();
 		}
-
 	}
 
 	/**
@@ -106,24 +105,29 @@ public class MainActivity extends Activity implements
 	 * the fragment to display a list of projects.
 	 */
 	private void createProjectList() {
-		this.mTwoPane = (getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE;
 		Bundle args = new Bundle();
 		args.putBoolean("TwoPane", this.mTwoPane);
 		ProjectListFragment fragment = new ProjectListFragment();
-		this.fragmentStack.push(fragment);
+		GlobalData.getData().fragmentStack.push(fragment);
 		getFragmentManager().beginTransaction().add(fragment, "Project_List")
 				.addToBackStack("Project_List");
 		fragment.setArguments(args);
-		currFragment=fragment;
+		GlobalData.getData().currentFragment = fragment;
 		if (!this.mTwoPane) {
 			setContentView(R.layout.activity_onepane);
 			getFragmentManager().beginTransaction()
 					.add(R.id.main_fragment_container, fragment).commit();
-		    this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+			this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 		} else {
 			setContentView(R.layout.activity_twopane);
 			getFragmentManager().beginTransaction()
 					.add(R.id.twopane_list, fragment).commit();
+			Fragment fragmentID = getFragmentManager().findFragmentById(
+					R.id.twopane_detail_container);
+			if (fragmentID != null) {
+				getFragmentManager().beginTransaction().remove(fragmentID)
+						.commit();
+			}
 		}
 	}
 
@@ -147,15 +151,16 @@ public class MainActivity extends Activity implements
 
 		return true;
 	}
+
 	@Override
-	public boolean onPrepareOptionsMenu(Menu menu){
-		SubMenu submenu=menu.findItem(R.id.action_sorting).getSubMenu();
-		MenuItem dateOldest= submenu.findItem(R.id.sortOldest);
-		MenuItem dateNewest= submenu.findItem(R.id.sortNewest);
-		MenuItem AZ= submenu.findItem(R.id.sortAZ);
-		MenuItem ZA= submenu.findItem(R.id.sortZA);
-		
-		if (currFragment instanceof ProjectListFragment){
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		SubMenu submenu = menu.findItem(R.id.action_sorting).getSubMenu();
+		MenuItem dateOldest = submenu.findItem(R.id.sortOldest);
+		MenuItem dateNewest = submenu.findItem(R.id.sortNewest);
+		MenuItem AZ = submenu.findItem(R.id.sortAZ);
+		MenuItem ZA = submenu.findItem(R.id.sortZA);
+
+		if (GlobalData.getData().currentFragment instanceof ProjectListFragment) {
 			dateOldest.setVisible(false);
 			dateOldest.setEnabled(false);
 			dateNewest.setVisible(false);
@@ -164,11 +169,9 @@ public class MainActivity extends Activity implements
 			AZ.setEnabled(true);
 			ZA.setVisible(true);
 			ZA.setEnabled(true);
-			
-			
-		}
-		else{
-			MenuItem sorting=menu.findItem(R.id.action_sorting);
+
+		} else {
+			MenuItem sorting = menu.findItem(R.id.action_sorting);
 			sorting.setVisible(false);
 			sorting.setEnabled(false);
 			dateOldest.setVisible(false);
@@ -179,8 +182,7 @@ public class MainActivity extends Activity implements
 			AZ.setEnabled(false);
 			ZA.setVisible(false);
 			ZA.setEnabled(false);
-			
-			
+
 		}
 		return true;
 	}
@@ -188,11 +190,12 @@ public class MainActivity extends Activity implements
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		int id = item.getItemId();
-		if (id == android.R.id.home && this.fragmentStack.size() > 1) {
-			this.fragmentStack.pop();
-			Fragment beforeFragment = this.fragmentStack.peek();
+		if (id == android.R.id.home
+				&& GlobalData.getData().fragmentStack.size() > 1) {
+			GlobalData.getData().fragmentStack.pop();
+			Fragment beforeFragment = GlobalData.getData().fragmentStack.peek();
 			getActionBar().setDisplayHomeAsUpEnabled(
-					this.fragmentStack.size() > 1);
+					GlobalData.getData().fragmentStack.size() > 1);
 			if (this.mTwoPane) {
 				getFragmentManager().beginTransaction()
 						.replace(R.id.twopane_list, beforeFragment).commit();
@@ -223,9 +226,9 @@ public class MainActivity extends Activity implements
 		Bundle args = new Bundle();
 		args.putBoolean("TwoPane", this.mTwoPane);
 		TaskListFragment fragment = new TaskListFragment();
-		this.fragmentStack.push(fragment);
+		GlobalData.getData().fragmentStack.push(fragment);
 		fragment.setArguments(args);
-		currFragment=fragment;
+		GlobalData.getData().currentFragment = fragment;
 		getFragmentManager().beginTransaction().replace(container, fragment)
 				.commit();
 		if (this.mTwoPane) {
@@ -248,19 +251,20 @@ public class MainActivity extends Activity implements
 		Bundle args = new Bundle();
 		args.putBoolean("TwoPane", this.mTwoPane);
 		MilestoneListFragment fragment = new MilestoneListFragment();
-		this.fragmentStack.push(fragment);
+		GlobalData.getData().fragmentStack.push(fragment);
 		getFragmentManager().beginTransaction().add(fragment, "Milestone_List")
 				.addToBackStack("Milestone_List");
 		fragment.setArguments(args);
-		currFragment=fragment;
 		getFragmentManager().beginTransaction().replace(container, fragment)
 				.commit();
 		if (this.mTwoPane) {
+			Fragment f = getFragmentManager().findFragmentById(
+					R.id.twopane_detail_container);
 			getFragmentManager()
 					.beginTransaction()
-					.remove(getFragmentManager().findFragmentById(
-							R.id.twopane_detail_container)).commit();
+					.remove(f).commit();
 		}
+		GlobalData.getData().currentFragment = fragment;
 		getActionBar().setDisplayHomeAsUpEnabled(true);
 	}
 
@@ -275,11 +279,11 @@ public class MainActivity extends Activity implements
 		Bundle args = new Bundle();
 		args.putBoolean("TwoPane", this.mTwoPane);
 		ProjectListFragment fragment = new ProjectListFragment();
-		this.fragmentStack.push(fragment);
+		GlobalData.getData().fragmentStack.push(fragment);
 		getFragmentManager().beginTransaction().add(fragment, "Project_View")
 				.addToBackStack("Project_View");
 		fragment.setArguments(args);
-		currFragment=fragment;
+		GlobalData.getData().currentFragment = fragment;
 		getFragmentManager().beginTransaction().replace(container, fragment)
 				.commit();
 		if (this.mTwoPane) {
@@ -296,14 +300,14 @@ public class MainActivity extends Activity implements
 	 * that the item with the given ID was selected.
 	 */
 	public void onItemSelected(Project p) {
-		this.selectedProject = p;
+		GlobalData.getData().selectedProject = p;
 		Bundle arguments = new Bundle();
 		arguments.putParcelable("Project", p);
-		Log.i("Project", new Boolean(p==null).toString());
+		Log.i("Project", new Boolean(p == null).toString());
 		ProjectDetailFragment fragment = new ProjectDetailFragment();
 
 		fragment.setArguments(arguments);
-		currFragment=fragment;
+		GlobalData.getData().currentFragment = fragment;
 		getFragmentManager()
 				.beginTransaction()
 				.replace(
@@ -313,7 +317,7 @@ public class MainActivity extends Activity implements
 		// If in two pane mode, we cannot go up.
 
 		if (!this.mTwoPane) {
-			this.fragmentStack.push(fragment);
+			GlobalData.getData().fragmentStack.push(fragment);
 		}
 		getActionBar().setDisplayHomeAsUpEnabled(!this.mTwoPane);
 	}
@@ -323,12 +327,12 @@ public class MainActivity extends Activity implements
 	 * that the item with the given ID was selected.
 	 */
 	public void onItemSelected(Milestone m) {
-		this.selectedMilestone = m;
+		GlobalData.getData().selectedMilestone = m;
 		Bundle arguments = new Bundle();
 		arguments.putParcelable("Milestone", m);
 		MilestoneDetailFragment fragment = new MilestoneDetailFragment();
 		fragment.setArguments(arguments);
-		currFragment=fragment;
+		GlobalData.getData().currentFragment = fragment;
 		getFragmentManager()
 				.beginTransaction()
 				.replace(
@@ -336,7 +340,7 @@ public class MainActivity extends Activity implements
 								: R.id.main_fragment_container, fragment)
 				.commit();
 		if (!this.mTwoPane) {
-			this.fragmentStack.push(fragment);
+			GlobalData.getData().fragmentStack.push(fragment);
 		}
 		getActionBar().setDisplayHomeAsUpEnabled(true);
 	}
@@ -346,12 +350,12 @@ public class MainActivity extends Activity implements
 	 * the item with the given ID was selected.
 	 */
 	public void onItemSelected(Task t) {
-		this.selectedTask = t;
+		GlobalData.getData().selectedTask = t;
 		Bundle arguments = new Bundle();
 		arguments.putBoolean("Two Pane", this.mTwoPane);
 		TaskDetailFragment fragment = new TaskDetailFragment();
 		fragment.setArguments(arguments);
-		currFragment=fragment;
+		GlobalData.getData().currentFragment = fragment;
 		getFragmentManager()
 				.beginTransaction()
 				.replace(
@@ -359,7 +363,7 @@ public class MainActivity extends Activity implements
 								: R.id.main_fragment_container, fragment)
 				.commit();
 		if (!this.mTwoPane) {
-			this.fragmentStack.push(fragment);
+			GlobalData.getData().fragmentStack.push(fragment);
 		}
 		getActionBar().setDisplayHomeAsUpEnabled(true);
 	}
@@ -370,30 +374,36 @@ public class MainActivity extends Activity implements
 	public void logOut(MenuItem item) {
 
 		Intent login = new Intent(this, LoginActivity.class);
-		currFragment=null;
+		GlobalData.getData().currentFragment = null;
+		GlobalData.getData().user = null;
 		this.startActivity(login);
 		this.finish();
 		Firebase ref = new Firebase(firebaseUrl);
 		ref.unauth();
 	}
 
+	@Override
+	public Object onRetainNonConfigurationInstance() {
+		return this;
+	}
+
 	/**
 	 * Allows the project manager to create a new milestone.
 	 */
 	public void createMilestone(MenuItem item) {
-		if (this.selectedProject != null
-				&& this.selectedProject.getProjectId() != null) {
+		if (GlobalData.getData().selectedProject != null
+				&& GlobalData.getData().selectedProject.getProjectId() != null) {
 
 			CreateMilestoneFragment msFrag = new CreateMilestoneFragment();
 
 			Bundle arguments = new Bundle();
 			arguments.putString("projectid",
-					this.selectedProject.getProjectId());
+					GlobalData.getData().selectedProject.getProjectId());
 			msFrag.setArguments(arguments);
 			msFrag.show(getFragmentManager(), "Diag");
-//			if (this.currFragment instanceof MilestoneListFragment){
-//				((MilestoneListFragment)this.currFragment).dataChanged();
-//			}
+			// if (this.currFragment instanceof MilestoneListFragment){
+			// ((MilestoneListFragment)this.currFragment).dataChanged();
+			// }
 		}
 
 	}
@@ -403,28 +413,31 @@ public class MainActivity extends Activity implements
 	 */
 	public void createTask(MenuItem item) {
 
-		if (this.selectedMilestone != null
-				&& this.selectedMilestone.getMilestoneId() != null) {
+		if (GlobalData.getData().selectedMilestone != null
+				&& GlobalData.getData().selectedMilestone.getMilestoneId() != null) {
 			CreateTaskFragment taskFrag = new CreateTaskFragment();
 			Bundle arguments = new Bundle();
 			arguments.putString("milestoneId",
-					this.selectedMilestone.getMilestoneId());
+					GlobalData.getData().selectedMilestone.getMilestoneId());
 			arguments.putString("projectId",
-					this.selectedProject.getProjectId());
+					GlobalData.getData().selectedProject.getProjectId());
 			taskFrag.setArguments(arguments);
-			currFragment=taskFrag;
+			GlobalData.getData().currentFragment = taskFrag;
 			taskFrag.show(getFragmentManager(), "Diag");
 		}
 	}
+
 	/**
-	 * sets Sorting mode, and then calls the sortingChanged method on the current fragment
+	 * sets Sorting mode, and then calls the sortingChanged method on the
+	 * current fragment
 	 */
-	public void sortingMode(MenuItem item){
-		this.sortingMode=item.getTitle().toString();
-		Log.i("SORTINGMODE", this.sortingMode);
-		if (this.currFragment!=null){
-			if (this.currFragment instanceof ProjectListFragment){
-				((ProjectListFragment)this.currFragment).sortingChanged();
+	public void sortingMode(MenuItem item) {
+		GlobalData.getData().sortingMode = item.getTitle().toString();
+		Log.i("SORTINGMODE", GlobalData.getData().sortingMode);
+		if (GlobalData.getData().currentFragment != null) {
+			if (GlobalData.getData().currentFragment instanceof ProjectListFragment) {
+				((ProjectListFragment) GlobalData.getData().currentFragment)
+						.sortingChanged();
 			}
 		}
 	}
@@ -439,13 +452,14 @@ public class MainActivity extends Activity implements
 		this.startActivity(intent);
 
 	}
+
 	/**
 	 * Returns the user's list of projects
 	 * 
 	 * @return
 	 */
 	public ArrayList<Project> getProjects() {
-		return this.user.getProjects();
+		return GlobalData.getData().user.getProjects();
 	}
 
 	/**
@@ -454,7 +468,7 @@ public class MainActivity extends Activity implements
 	 * @return
 	 */
 	public ArrayList<Milestone> getMilestones() {
-		return this.selectedProject.getMilestones();
+		return GlobalData.getData().selectedProject.getMilestones();
 	}
 
 	/**
@@ -463,7 +477,7 @@ public class MainActivity extends Activity implements
 	 * @return
 	 */
 	public ArrayList<Task> getTasks() {
-		return this.selectedMilestone.getTasks();
+		return GlobalData.getData().selectedMilestone.getTasks();
 	}
 
 	/**
@@ -472,7 +486,7 @@ public class MainActivity extends Activity implements
 	 * @return
 	 */
 	public Map<Member, Enums.Role> getProjectMembers() {
-		return this.selectedProject.getMembers();
+		return GlobalData.getData().selectedProject.getMembers();
 	}
 
 	/**
@@ -481,29 +495,31 @@ public class MainActivity extends Activity implements
 	 * @return
 	 */
 	public User getUser() {
-		return this.user;
+		return GlobalData.getData().user;
 	}
 
 	public Project getSelectedProject() {
-		return this.selectedProject;
+		return GlobalData.getData().selectedProject;
 	}
-	
+
 	/**
 	 * Returns the currently selected task.
 	 */
-	public Task getSelectedTask(){
-		return this.selectedTask;
+	public Task getSelectedTask() {
+		return GlobalData.getData().selectedTask;
 	}
+
 	/**
 	 * Returns the currently selected milestone
 	 */
-	public Milestone getSelectedMilestone(){
-		return this.selectedMilestone;
+	public Milestone getSelectedMilestone() {
+		return GlobalData.getData().selectedMilestone;
 	}
+
 	/**
 	 * Returns the current sorting mode
 	 */
-	public String getSortMode(){
-		return this.sortingMode;
+	public String getSortMode() {
+		return GlobalData.getData().sortingMode;
 	}
 }

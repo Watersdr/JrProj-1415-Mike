@@ -6,12 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import rhit.jrProj.henry.bridge.ListChangeNotifier;
-import rhit.jrProj.henry.bridge.SortedArrayAdapter;
-import rhit.jrProj.henry.bridge.SortedListChangeNotifier;
 import rhit.jrProj.henry.bridge.TwoLineArrayAdapter;
 import rhit.jrProj.henry.firebase.Enums;
 import rhit.jrProj.henry.firebase.Member;
-import rhit.jrProj.henry.firebase.Milestone;
 import rhit.jrProj.henry.firebase.Project;
 import rhit.jrProj.henry.firebase.Task;
 import android.app.Activity;
@@ -22,7 +19,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.SimpleAdapter;
 
 import com.firebase.client.Firebase;
 
@@ -127,6 +123,7 @@ public class TaskListFragment extends ListFragment {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setHasOptionsMenu(true);
+		//setRetainInstance(true);
 	}
 
 	@Override
