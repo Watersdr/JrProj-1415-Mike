@@ -4,10 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import android.util.Log;
-import rhit.jrProj.henry.firebase.Milestone;
-import rhit.jrProj.henry.firebase.Project;
-import rhit.jrProj.henry.firebase.Task;
 import junit.framework.TestCase;
 
 public class ProjectSortTest extends TestCase {
@@ -26,7 +22,6 @@ public class ProjectSortTest extends TestCase {
 		this.projects.add("IOS Project");
 		
 		this.compAZ = new Comparator<String>() {
-			@Override
 			public int compare(String lhs, String rhs) {
 				if (lhs instanceof String && rhs instanceof String) {
 					return ((String) lhs).compareToIgnoreCase((String) rhs);
@@ -36,7 +31,6 @@ public class ProjectSortTest extends TestCase {
 		};
 		
 		this.compZA = new Comparator<String>() {
-			@Override
 			public int compare(String lhs, String rhs) {
 				if (lhs instanceof String && rhs instanceof String) {
 					return -1
@@ -106,7 +100,7 @@ public class ProjectSortTest extends TestCase {
 	public void testSortWithNumbers() {
 		this.projects = new ArrayList<String>();
 		this.projects.add("Android Project 1");
-		this.projects.add("Bagels 1");
+		this.projects.add("Bagels 10");
 		this.projects.add("Bagels 3");
 		this.projects.add("iOS project 0");
 		this.projects.add("bagels 2");
@@ -117,9 +111,9 @@ public class ProjectSortTest extends TestCase {
 		ArrayList<String> answer = new ArrayList<String>();
 		answer.add("Android Project 0");
 		answer.add("Android Project 1");
-		answer.add("Bagels 1");
-		answer.add("bagels 2");
-		answer.add("Bagels 3");
+		answer.add("Bagels 2");
+		answer.add("bagels 3");
+		answer.add("Bagels 10");
 		answer.add("iOS project 0");
 		answer.add("iOS Project 2");
 		assertEquals(answer, this.projects);
