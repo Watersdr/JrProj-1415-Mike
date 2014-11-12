@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import rhit.jrProj.henry.bridge.ListChangeNotifier;
 import rhit.jrProj.henry.bridge.SortedArrayAdapter;
 import rhit.jrProj.henry.bridge.SortedListChangeNotifier;
+import rhit.jrProj.henry.bridge.TwoLineArrayAdapter;
 import rhit.jrProj.henry.firebase.Enums;
 import rhit.jrProj.henry.firebase.Member;
 import rhit.jrProj.henry.firebase.Milestone;
@@ -113,8 +114,8 @@ public class MilestoneListFragment extends ListFragment {
 		super.onActivityCreated(savedInstanceState);
 		// Done: replace with a real list adapter.
 		this.milestones = this.mCallbacks.getMilestones();
-		ArrayAdapter<Milestone> arrayAdapter = new ArrayAdapter<Milestone>(
-				getActivity(), android.R.layout.simple_list_item_activated_1,
+		SortedArrayAdapter<Milestone> arrayAdapter = new SortedArrayAdapter<Milestone>(
+				getActivity(), android.R.layout.simple_list_item_activated_2,
 				android.R.id.text1, this.milestones);
 		ListChangeNotifier<Milestone> lcn = new ListChangeNotifier<Milestone>(
 				arrayAdapter);

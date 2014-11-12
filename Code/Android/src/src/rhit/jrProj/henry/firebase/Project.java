@@ -139,6 +139,13 @@ public class Project implements Parcelable {
 	public ArrayList<Milestone> getMilestones() {
 		return this.milestones;
 	}
+	/**
+	 * Formats Due date to dd/mm/yyyy
+	 * @return formatted due date as String
+	 */
+	public String getDueDateFormatted(){
+		return GeneralAlgorithms.getDueDateFormatted(this.getDueDate());
+	}
 
 	/**
 	 * 

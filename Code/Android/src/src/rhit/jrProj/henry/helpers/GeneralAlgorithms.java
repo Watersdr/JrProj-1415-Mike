@@ -3,7 +3,8 @@ package rhit.jrProj.henry.helpers;
 import android.util.Log;
 
 public class GeneralAlgorithms {
-
+	private final static String[] months={"Jan.", "Feb.", "Mar.", "Apr.","May", "Jun.", "Jul.", "Aug.",
+		"Sep.", "Oct.", "Nov.", "Dec."};
 	public GeneralAlgorithms() {
 		// TODO Auto-generated constructor stub
 	}
@@ -13,60 +14,82 @@ public class GeneralAlgorithms {
 	 * @param s2
 	 * @return
 	 */
+	private final static String getChunk(String s, int slength, int marker)
+    {
+        StringBuilder chunk = new StringBuilder();
+        char c = s.charAt(marker);
+        chunk.append(c);
+        marker++;
+        if (Character.isDigit(c))
+        {
+            while (marker < slength)
+            {
+                c = s.charAt(marker);
+                if (!Character.isDigit(c))
+                    break;
+                chunk.append(c);
+                marker++;
+            }
+        } else
+        {
+            while (marker < slength)
+            {
+                c = s.charAt(marker);
+                if (Character.isDigit(c))
+                    break;
+                chunk.append(c);
+                marker++;
+            }
+        }
+        return chunk.toString();
+    }
 	public static int compareToIgnoreCase(String s1, String s2){
-		Log.i("test", "compareToIgnoreCase");
-		Log.i("s-s1", s1);
-		Log.i("s-s2", s2);
-		if (s1.equals(s2)) return 0;
+		System.out.println(s1+"\t\t\t"+s2);
+		if (s1==null || s2==null){
+			return 0;
+		}
 		else{
 			int i= 0;
 			int j= 0;
 			int s1len=s1.length();
 			int s2len=s2.length();
-			while (i<s1len && j<s2len){
-				char c1= s1.charAt(i);
-				char c2= s2.charAt(j);
-				char [] sp1 = new char[s1len];
-				char [] sp2 = new char[s2len];
-				int loc1=0;
-				int loc2=0;
-				while (Character.isDigit(c1)==Character.isDigit(sp1[0])){
-					sp1[loc1++]=c1;
-					i++;
-					if (i <s1len){
-						c1=s1.charAt(i);
-					} else{
-						break;
-					}
-				}
-				while (Character.isDigit(c2)==Character.isDigit(sp2[0])){
-					sp2[loc2++]=c2;
-					j++;
-					if (j <s2len){
-						c2=s2.charAt(j);
-					} else{
-						break;
-					}
-				}
-				String str1=new String(sp1);
-				String str2=new String(sp2);
-				int result;
-				if (Character.isDigit(sp1[0]) && Character.isDigit(sp2[0])){
-					Integer num1= new Integer(Integer.parseInt(str1.trim()));
-					Integer num2= new Integer(Integer.parseInt(str2.trim()));
-					result=num1.compareTo(num2);
-				}
-				else{
-					result=str1.compareToIgnoreCase(str2);
-				}
-				if (result!=0){
-					return result;
-				}
-				
-			}
+			while (i < s1len && j < s2len)
+	        {
+	            String c1 = getChunk(s1, s1len, i);
+	            i += c1.length();
+
+	            String c2 = getChunk(s2, s2len, j);
+	            j += c2.length();
+
+	            // If both chunks contain numeric characters, sort them numerically
+	            int result = 0;
+	            if (Character.isDigit(c1.charAt(0)) && Character.isDigit(c2.charAt(0)))
+	            {
+	                // Simple chunk comparison by length.
+	                int c1Length = c1.length();
+	                result = c1Length - c2.length();
+	                // If equal, the first different number counts
+	                if (result == 0)
+	                {
+	                    for (int k = 0; k < c1Length; k++)
+	                    {
+	                        result = c1.charAt(k) - c2.charAt(k);
+	                        if (result != 0)
+	                        {
+	                            return result;
+	                        }
+	                    }
+	                }
+	            } else
+	            {
+	                result = c1.compareToIgnoreCase(c2);
+	            }
+
+	            if (result != 0)
+	                return result;
+	        }
 		return s1len-s2len;
 		}
-		
 	}
 	public static int compareToByDate(String s1, String s2, boolean newestFirst){
 		if (s1==s2) return 0;
@@ -102,5 +125,29 @@ public class GeneralAlgorithms {
 				return result;
 			}
 		}
+	}
+	/**
+	 * Formats Due date to dd/mm/yyyy
+	 * @return formatted due date as String
+	 */
+	public static String getDueDateFormatted(String s1){
+		if (s1.equals("No Due Date") || s1.equals("")) return s1;
+		int yearend1=s1.indexOf("/");
+		if (yearend1==-1){
+			yearend1=s1.indexOf("-");
+		}
+		int monthend1=s1.lastIndexOf("/");
+		if (monthend1==-1){
+			monthend1=s1.lastIndexOf("-");
+		}
+		
+		String year1=s1.substring(0, yearend1);
+		
+		int month1=new Integer(s1.substring(yearend1+1, monthend1)).intValue();
+		
+		String day1=s1.substring(monthend1+1);
+		String month=months[month1-1];
+		return day1+" "+month+" "+year1;
+		
 	}
 }
