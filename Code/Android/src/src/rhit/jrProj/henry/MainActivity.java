@@ -156,10 +156,10 @@ public class MainActivity extends Activity implements
 		MenuItem ZA= submenu.findItem(R.id.sortZA);
 		
 		if (currFragment instanceof ProjectListFragment){
-			dateOldest.setVisible(false);
-			dateOldest.setEnabled(false);
-			dateNewest.setVisible(false);
-			dateNewest.setEnabled(false);
+			dateOldest.setVisible(true);
+			dateOldest.setEnabled(true);
+			dateNewest.setVisible(true);
+			dateNewest.setEnabled(true);
 			AZ.setVisible(true);
 			AZ.setEnabled(true);
 			ZA.setVisible(true);

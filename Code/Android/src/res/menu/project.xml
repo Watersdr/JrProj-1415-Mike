@@ -26,8 +26,8 @@
         <menu>
             <item android:id="@+id/sortAZ" android:title="A-Z" android:onClick="sortingMode"/>
             <item android:id="@+id/sortZA" android:title="Z-A" android:onClick="sortingMode"/>
-            <item android:id="@+id/sortOldest" android:title="Oldest First" android:onClick="sortingMode"/>
-            <item android:id="@+id/sortNewest" android:title="Newest First" android:onClick="sortingMode"/>
+            <item android:id="@+id/sortOldest" android:title="Oldest Due Date on Top" android:onClick="sortingMode"/>
+            <item android:id="@+id/sortNewest" android:title="Newest Due Date on Top" android:onClick="sortingMode"/>
         </menu>
     </item>
 

@@ -89,22 +89,37 @@ public class SortedListChangeNotifier<T> extends ListChangeNotifier<T> {
 					}
 				};
 		}
-		else if (this.sortType.equals("Newest First")){
-			//Not yet implemented
-			//Standard date form needed!
+		else if (this.sortType.equals("Newest Due Date on Top")){
 			this.c=new Comparator<T>(){
 				@Override
 				public int compare(T lhs, T rhs) {
+					if (lhs instanceof Project && rhs instanceof Project){
+						return ((Project) lhs).compareToByDate((Project) rhs, true);
+						}
+//					else if (lhs instanceof Milestone && rhs instanceof Milestone){
+//						return ((Milestone) lhs).compareToByDate((Milestone) rhs, true);
+//						}
+//					else if (lhs instanceof Task && rhs instanceof Task){
+//						//Should not happen
+//						return ((Task) lhs).compareToIgnoreCase((Task) rhs);
+//						}
 					return 0;
 					}
 				};
 		}
-		else if (this.sortType.equals("Oldest First")){
-			//Not yet implemented
-			//Standard date form needed!
+		else if (this.sortType.equals("Oldest Due Date on Top")){
 			this.c=new Comparator<T>(){
-				@Override
 				public int compare(T lhs, T rhs) {
+					if (lhs instanceof Project && rhs instanceof Project){
+						return ((Project) lhs).compareToByDate((Project) rhs, false);
+						}
+//					else if (lhs instanceof Milestone && rhs instanceof Milestone){
+//						return ((Milestone) lhs).compareToByDate((Milestone) rhs, false);
+//						}
+//					else if (lhs instanceof Task && rhs instanceof Task){
+//						//Should not happen
+//						return ((Task) lhs).compareToIgnoreCase((Task) rhs);
+//						}
 					return 0;
 					}
 				};
