@@ -7,16 +7,16 @@
 				<td>Assigned User</td> 
 				<td>Category</td>
 				<td>Status</td>
+                <td>Due Date</td>
 				<td>Estimated Hours</td>
 			</thead>
 			<tbody id="task-rows">
 			</tbody>
-			<tbody>
-				<tr class="task-row" data-reveal-id="task-modal" onclick="newTask()">
-					<td>Add New Task</td>
-				</tr>
-			</tbody>
+
 		</table>
+		<div class="button task-row" data-reveal-id="task-modal" onclick="newTask()">
+			Add New Task
+		</div>
 		<div id="task-modal" class="reveal-modal" data-reveal>
 		</div>
 		<!-- <div class="small-12 columns wide" id="tasks-table">
